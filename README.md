@@ -1,74 +1,188 @@
-# BookRAG
+<h1 align="center">BookRAG</h1>
 
-This is the repo for "BookRAG: A Hierarchical Structure-aware Index-based Approach for Retrieval-Augmented Generation on Complex Documents"
+<p align="center">
+  <strong>BookRAG: A Hierarchical Structure-aware Index-based Approach for Retrieval-Augmented Generation on Complex Documents</strong>
+</p>
 
-Our framework has based on MinerU and PDF-extract-kit-1.0 to detect PDF processing. For environment setup, please reference to [MinerU](https://github.com/opendatalab/MinerU) for more details if meets some problem related to PDF information extraction.
+<p align="center">
+  <a href="https://arxiv.org/abs/2512.03413">
+    <img src="https://img.shields.io/badge/Paper-arXiv%3A%202512.03413-b31b1b?style=flat-square" alt="Paper">
+  </a>
+  <a href="./BOOKRAG_VLDB_2026_full.pdf">
+    <img src="https://img.shields.io/badge/PDF-Paper%20PDF-7c3aed?style=flat-square" alt="Paper PDF">
+  </a>
+  <a href="https://github.com/sam234990/BookRAG">
+    <img src="https://img.shields.io/badge/Code-BookRAG-111827?style=flat-square" alt="Code">
+  </a>
+</p>
 
-## Setup Environment
+> **BookRAG** is the official repository for **"BookRAG: A Hierarchical Structure-aware Index-based Approach for Retrieval-Augmented Generation on Complex Documents"**, accepted by **VLDB 2026**.
 
-This project using MinerU as PDF parsing method. Please follow the MinerU's [instruction](https://github.com/opendatalab/MinerU) to install the dependency first.
+BookRAG targets RAG over long, highly structured documents such as books, manuals, handbooks, reports, and technical guidebooks. Instead of flattening documents into isolated text chunks, BookRAG builds a structure-aware **BookIndex** that combines document hierarchies, entity relations, and fine-grained evidence mapping for more effective retrieval and generation.
 
-Full environment of BookRAG is coming.
+## News
 
-## Run BookRAG
+- **VLDB 2026**: BookRAG has been accepted to VLDB 2026.
+- **arXiv**: The preprint is available at [arXiv:2512.03413](https://arxiv.org/abs/2512.03413).
+- **Release in progress**: We are preparing the reproducible environment instructions for public use.
 
-Our BookRAG is two steps: offline Index construction and online query.
+## Why BookRAG?
 
-Before these two steps, please select and modify the system and dataset config first. For the dataset config, please set the dataset input path and working directory, example file: [dataset_config.yaml](./Scripts/cfg/example-m3docVQA.yaml). For the system config, please set the parameters related to LLM, VLM, and ..., example file: [default.yaml](./config/default.yaml).
+Complex documents are rarely just bags of chunks. They usually contain explicit logical structures, nested chapters, cross-section references, tables, figures, and entity-level dependencies. Conventional RAG pipelines often lose these signals during parsing and indexing.
 
-### Offline Index
+BookRAG is designed around three ideas:
 
-We provide a bash for constructing Book Index, please set the correct config you set before: [index.sh](./Scripts/example-index.sh).
+- **Hierarchy matters**: document trees provide natural navigation paths from coarse chapters to fine evidence.
+- **Relations matter**: entity-level graphs capture cross-section dependencies that pure chunk retrieval can miss.
+- **Query strategy matters**: different questions require different retrieval workflows, from local lookup to global reasoning.
 
-```shell
-bash Script/example-index.sh
+<p align="center">
+  <img src="./assets/alpha.png" alt="Comparison of existing RAG methods and BookRAG" width="92%">
+</p>
+
+<p align="center"><em>Comparison of existing methods and BookRAG for complex document QA.</em></p>
+
+## Method Overview
+
+BookRAG has two stages:
+
+1. **Offline index construction** builds a BookIndex from each document.
+2. **Online retrieval and generation** uses the BookIndex to retrieve relevant evidence and answer user questions.
+
+The current implementation supports multiple retrieval configurations and baselines through YAML configuration files under [`config`](./config) and dataset configuration files under [`Scripts/cfg`](./Scripts/cfg).
+
+### BookIndex Construction
+
+BookRAG first constructs a document-native BookIndex by combining a hierarchical document tree, an entity-relation graph, and mappings between entities and document tree nodes.
+
+<p align="center">
+  <img src="./assets/index.png" alt="BookIndex construction process" width="96%">
+</p>
+
+<p align="center"><em>The BookIndex construction process.</em></p>
+
+### Agent-based Retrieval
+
+Given a user question, BookRAG performs query classification and planning, then dynamically composes retrieval operators over the BookIndex to locate relevant evidence and generate the final answer.
+
+<p align="center">
+  <img src="./assets/online.png" alt="Agent-based retrieval workflow in BookRAG" width="96%">
+</p>
+
+<p align="center"><em>The general workflow of agent-based retrieval in BookRAG.</em></p>
+
+## Environment
+
+BookRAG uses [MinerU](https://github.com/opendatalab/MinerU) for PDF parsing and document information extraction. Please install MinerU and its dependencies first if your workflow requires PDF processing.
+
+The complete, reproducible environment for the VLDB 2026 experiments is being prepared and will be released with detailed setup instructions.
+
+## Quick Start
+
+Before running BookRAG, update the following configuration files:
+
+- **System configuration**: model, retriever, embedding, VLM, and runtime settings, for example [`config/default.yaml`](./config/default.yaml)
+- **Dataset configuration**: input path, working directory, dataset split, and metadata settings, for example [`Scripts/cfg/example-m3docVQA.yaml`](./Scripts/cfg/example-m3docVQA.yaml)
+
+### Offline Index Construction
+
+Use the example script to construct the BookIndex:
+
+```bash
+bash Scripts/example-index.sh
 ```
 
 ### Online Retrieval
 
-We provide a bash for online retrieval given a specific dataset, please set the correct config you set before: [online.sh](./Scripts/example-rag.sh).
+Run BookRAG on a configured dataset:
 
-```shell
-bash Script/example-rag.sh
+```bash
+bash Scripts/example-rag.sh
 ```
 
-### Evaluate
+### Evaluation
 
-We use powerful LLM as answer extractor from the responses of BookRAG or other method. Please set the api file first: [TXT](./Eval/utils/api.txt).
+We use a strong LLM as an answer extractor for evaluating model responses. Please configure the API file before evaluation, for example [`config/api.txt`](./config/api.txt).
 
-We also provide a bash for evaluate the answer: [eval.sh](./Scripts/example-eval.sh).
-
-```shell
-bash Script/example-eval.sh
+```bash
+bash Scripts/example-eval.sh
 ```
 
-## Dataset format
+## Supported Datasets
 
-We use the following datasets:
+BookRAG is evaluated on widely used complex document QA benchmarks:
 
-* MMLongBench-Doc: [MMLONGBENCH-DOC](https://github.com/mayubo2333/MMLongBench-Doc)
-* m3docvqa: [M3DocRAG](https://github.com/bloomberg/m3docrag)
-* Qasper: [Qasper](https://huggingface.co/datasets/allenai/qasper)
+- **MMLongBench-Doc**: [MMLONGBENCH-DOC](https://github.com/mayubo2333/MMLongBench-Doc)
+- **m3docvqa**: [M3DocRAG](https://github.com/bloomberg/m3docrag)
+- **Qasper**: [Qasper](https://huggingface.co/datasets/allenai/qasper)
 
-We then transform these dataset into an unified format:
+This repository releases the final filtered QA files used in our experiments. The original documents, raw QA files, and dataset-specific metadata should still be obtained from the official dataset repositories above.
+
+| Dataset | Released QA file | Original source |
+| --- | --- | --- |
+| MMLongBench-Doc | [`datasets/MMLongBench-Doc.json`](./datasets/MMLongBench-Doc.json) | [MMLONGBENCH-DOC](https://github.com/mayubo2333/MMLongBench-Doc) |
+| m3docvqa | [`datasets/m3docvqa.json`](./datasets/m3docvqa.json) | [M3DocRAG](https://github.com/bloomberg/m3docrag) |
+| Qasper | [`datasets/Qasper.json`](./datasets/Qasper.json) | [Qasper](https://huggingface.co/datasets/allenai/qasper) |
+
+Each released QA file follows the unified JSON format below:
 
 ```json
 [
-    {
-        "question":"THE FIRST QUESTION",
-        "answer":"THE ANSWER OF FIRST QUESTION",
-        "doc_uuid":"UUID OF THE DOCUMENT PDF",
-        "doc_path":"PATH TO THE DOCUMENT PDF",
-        "xxx":"other attributes"
-    },
-    {
-        "question":"THE SECOND QUESTION",
-        "answer":"THE ANSWER OF SECOND QUESTION",
-        "doc_uuid":"UUID OF THE DOCUMENT PDF",
-        "doc_path":"PATH TO THE DOCUMENT PDF",
-        "xxx":"other attributes"
-    }
+  {
+    "question": "THE FIRST QUESTION",
+    "answer": "THE ANSWER OF FIRST QUESTION",
+    "doc_uuid": "UUID OF THE DOCUMENT PDF",
+    "doc_path": "PATH_TO_DIR/DOCUMENT.pdf"
+  },
+  {
+    "question": "THE SECOND QUESTION",
+    "answer": "THE ANSWER OF SECOND QUESTION",
+    "doc_uuid": "UUID OF THE DOCUMENT PDF",
+    "doc_path": "PATH_TO_DIR/DOCUMENT.pdf"
+  }
 ]
 ```
 
-Please see the example preprocess scripts in [Scripts](./Scripts/preprocess/process_MML.ipynb).
+Example preprocessing notebooks and scripts are available in [`Scripts/preprocess`](./Scripts/preprocess).
+
+## Repository Layout
+
+```text
+BookRAG/
++-- Core/                 # indexing, retrieval, generation, providers, and configs
++-- Eval/                 # evaluation scripts and answer extraction utilities
++-- Scripts/              # example scripts, dataset configs, and preprocessing notebooks
++-- assets/               # figures and static assets used in the README
++-- config/               # system and method configuration files
++-- datasets/             # filtered QA files used in the paper experiments
++-- BOOKRAG_VLDB_2026_full.pdf
++-- main.py
+`-- README.md
+```
+
+## Release Plan
+
+We will release reproducible environment instructions for BookRAG.
+
+
+## Links
+
+- `arXiv`: [2512.03413](https://arxiv.org/abs/2512.03413)
+- `Paper PDF`: [BOOKRAG_VLDB_2026_full.pdf](./BOOKRAG_VLDB_2026_full.pdf)
+- `Code`: [sam234990/BookRAG](https://github.com/sam234990/BookRAG)
+
+## Citation
+
+If you find BookRAG useful, please cite our paper:
+
+```bibtex
+@article{wang2025bookrag,
+  title   = {BookRAG: A Hierarchical Structure-aware Index-based Approach for Retrieval-Augmented Generation on Complex Documents},
+  author  = {Wang, Shu and Zhou, Yingli and Fang, Yixiang},
+  journal = {arXiv preprint arXiv:2512.03413},
+  year    = {2025},
+  eprint  = {2512.03413},
+  archivePrefix = {arXiv},
+  url     = {https://arxiv.org/abs/2512.03413}
+}
+```

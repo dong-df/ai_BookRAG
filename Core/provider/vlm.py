@@ -163,6 +163,7 @@ class GPTVLMController(BaseVLMController):
             else OpenAI(api_key=config.api_key)
         )
         self.temperature = config.temperature or 0.1
+        self.max_tokens = config.max_tokens or 1000
 
     def _encode_image(self, image_path):
         if isinstance(image_path, Image.Image):
@@ -257,7 +258,10 @@ class GPTVLMController(BaseVLMController):
     ) -> str:
         content = self._prepare_messages(prompt_or_memory, images)
         completion = self.client.chat.completions.create(
-            model=self.model_name, messages=content, temperature=self.temperature
+            model=self.model_name,
+            messages=content,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
         )
 
         if completion.usage:

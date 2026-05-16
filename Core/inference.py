@@ -237,6 +237,17 @@ def inference(cfg: SystemConfig, data_df: pd.DataFrame, dataset_name: str):
         output_dir = output_dir = (
             Path(cfg.save_path) / f"eval_{dataset_name}_{rag_strategy}"
         )
+    
+    # special topk for mmr, graph, and vanilla
+    if rag_strategy in ["mmr", "graph", "vanilla"]:
+        if hasattr(cfg.rag.strategy_config, "topk"):
+            topk = cfg.rag.strategy_config.topk
+        elif hasattr(cfg.rag.strategy_config, "topk_docs"):
+            topk = cfg.rag.strategy_config.topk_docs
+        else:
+            topk = 5  # default value if not specified
+        output_dir = output_dir.with_name(f"{output_dir.name}_top{topk}")
+    
     output_dir.mkdir(parents=True, exist_ok=True)
 
     run_rag(
